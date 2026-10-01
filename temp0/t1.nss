@@ -14,6 +14,8 @@ void T1_HeartBeat()
     if (GetIsInCombat())
         return;
 
+    SpeakString("HELLO THERE!", TALKVOLUME_SHOUT);
+
     string sTarget = GetLocalString( OBJECT_SELF, "TARGET" );
     if (sTarget == "")
         return;
