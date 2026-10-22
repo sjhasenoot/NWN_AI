@@ -71,7 +71,7 @@ void UpdateCircle( string sCircle, string sColor )
     if (iTimer > 0 && iTimer <= 5)
     {
         string sMessage = IntToString( (6 - iTimer)*6 ) +
-            " seconds to spawning " + sLowerCaseColor + " ogre!!";
+            " seconds to spawning " + sLowerCaseColor + " ogre";
         AssignCommand( oCircle, SpeakString( sMessage, TALKVOLUME_SHOUT ) );
     }
 
@@ -139,8 +139,6 @@ void main()
             }
         }
     }
-
-    SpeakString( "HEY THERE! I WORK", TALKVOLUME_SHOUT );
 
     UpdateScore( ALTAR_RED_1 );
     UpdateScore( ALTAR_RED_2 );

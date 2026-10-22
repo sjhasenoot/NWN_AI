@@ -14,8 +14,6 @@ void T1_HeartBeat()
     if (GetIsInCombat())
         return;
 
-    SpeakString("HELLO THERE!", TALKVOLUME_SHOUT);
-
     string sTarget = GetLocalString( OBJECT_SELF, "TARGET" );
     if (sTarget == "")
         return;
@@ -23,6 +21,7 @@ void T1_HeartBeat()
     object oTarget = GetObjectByTag( sTarget );
     if (!GetIsObjectValid( oTarget ))
         return;
+
 
     // If there is a member of my own team close to the target and closer than me,
     // and no enemy is closer and this other member is not in combat and
@@ -54,7 +53,7 @@ void T1_HeartBeat()
 
     if (bNewTarget)
     {
-        sTarget = GetRandomTarget();
+        // sTarget = GetRandomTarget();
         SetLocalString( OBJECT_SELF, "TARGET", sTarget );
         oTarget = GetObjectByTag( sTarget );
         if (!GetIsObjectValid( oTarget ))
@@ -62,16 +61,20 @@ void T1_HeartBeat()
         fToTarget = GetDistanceToObject( oTarget );
     }
 
-    if (fToTarget > 0.5)
+    if (fToTarget > 1.5)
         ActionMoveToLocation( GetLocation( oTarget ), TRUE );
-
+    else if (IsFighter(OBJECT_SELF))
+        SpeakString("At the altar! Gotta start shootin'");
     return;
 }
 
 // Called when the NPC is spawned.
 void T1_Spawn()
 {
-    string sTarget = GetRandomTarget();
+    string sTarget = WpClosestAltarRight(OBJECT_SELF);
+    if (IsWizard(OBJECT_SELF)) 
+        sTarget = WpClosestAltarLeft(OBJECT_SELF); // Send the Wizards elsewhere
+        
     SetLocalString( OBJECT_SELF, "TARGET", sTarget );
     ActionMoveToLocation( GetLocation( GetObjectByTag( sTarget ) ), TRUE );
 }
@@ -113,6 +116,7 @@ void T1_UserDefined( int Event )
 
         // Whenever the NPC dies.
         case EVENT_DEATH:
+            SpeakString("Wilhelm scream");
             break;
 
         // When the NPC has just been spawned.
@@ -135,5 +139,5 @@ void T1_UserDefined( int Event )
 // Called when the fight starts, just before the initial spawning.
 void T1_Initialize( string sColor )
 {
-    SetTeamName( sColor, "Default-" + GetStringLowerCase( sColor ) );
+    SetTeamName( sColor, "Team 1-" + GetStringLowerCase( sColor ) );
 }
