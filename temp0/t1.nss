@@ -1,6 +1,7 @@
 #include "NW_I0_GENERIC"
 #include "our_constants"
 
+
 // Called every time that the AI needs to take a combat decision. The default is
 // a call to the NWN DetermineCombatRound.
 void T1_DetermineCombatRound( object oIntruder = OBJECT_INVALID, int nAI_Difficulty = 10 )
@@ -8,9 +9,32 @@ void T1_DetermineCombatRound( object oIntruder = OBJECT_INVALID, int nAI_Difficu
     DetermineCombatRound( oIntruder, nAI_Difficulty );
 }
 
+
+
+
+void T1_testing(){
+    string sColor = MyColor( OBJECT_SELF );
+    string sMyCirlce = "WP_CIRCLE_" + sColor;
+    SpeakString(IntToString(GetTimer(sMyCirlce)), TALKVOLUME_SHOUT);
+
+    if (GetTimer(sMyCirlce) > 2){
+        //ClearAllActions(OBJECT_SELF);
+        SetLocalString(OBJECT_SELF, "TARGET", sMyCirlce);
+    }
+    else{
+        string sTarget = WpClosestAltarRight(OBJECT_SELF);
+        SetLocalString( OBJECT_SELF, "TARGET", sTarget );
+    }
+}
+
+
+
 // Called every heartbeat (i.e., every six seconds).
 void T1_HeartBeat()
 {
+    if(IsFighterRight(OBJECT_SELF)){
+        T1_testing();
+    }
     if (GetIsInCombat())
         return;
 
@@ -27,52 +51,72 @@ void T1_HeartBeat()
     // has the same target, then choose a new target.
     float fToTarget = GetDistanceToObject( oTarget );
     int i = 1;
-    int bNewTarget = FALSE;
-    object oCreature = GetNearestObjectToLocation( OBJECT_TYPE_CREATURE, GetLocation( oTarget ), i );
-    while (GetIsObjectValid( oCreature ))
-    {
-        if (GetLocation( oCreature ) == GetLocation( OBJECT_SELF ))
-            break;
-        if (GetDistanceBetween( oCreature, oTarget ) > fToTarget)
-            break;
-        if (GetDistanceBetween( oCreature, oTarget ) > 5.0)
-            break;
-        if (!SameTeam( oCreature ))
-            break;
-        if (GetIsInCombat( oCreature ))
-            break;
-        if (GetLocalString( oCreature, "TARGET" ) == sTarget)
-        {
-            bNewTarget = TRUE;
-            break;
-        }
-        ++i;
-        oCreature = GetNearestObjectToLocation( OBJECT_TYPE_CREATURE, GetLocation( oTarget ), i );
-    }
+    // int bNewTarget = FALSE;
+    // object oCreature = GetNearestObjectToLocation( OBJECT_TYPE_CREATURE, GetLocation( oTarget ), i );
+    // while (GetIsObjectValid( oCreature ))
+    // {
+    //     if (GetLocation( oCreature ) == GetLocation( OBJECT_SELF ))
+    //         break;
+    //     if (GetDistanceBetween( oCreature, oTarget ) > fToTarget)
+    //         break;
+    //     if (GetDistanceBetween( oCreature, oTarget ) > 5.0)
+    //         break;
+    //     if (!SameTeam( oCreature ))
+    //         break;
+    //     if (GetIsInCombat( oCreature ))
+    //         break;
+    //     if (GetLocalString( oCreature, "TARGET" ) == sTarget)
+    //     {
+    //         bNewTarget = TRUE;
+    //         break;
+    //     }
+    //     ++i;
+    //     oCreature = GetNearestObjectToLocation( OBJECT_TYPE_CREATURE, GetLocation( oTarget ), i );
+    // }
 
-    if (bNewTarget)
-    {
-        sTarget = GetRandomTarget();
-        SetLocalString( OBJECT_SELF, "TARGET", sTarget );
-        oTarget = GetObjectByTag( sTarget );
-        if (!GetIsObjectValid( oTarget ))
-            return;
-        fToTarget = GetDistanceToObject( oTarget );
-    }
+    // if (bNewTarget)
+    // {
+    //     sTarget = GetRandomTarget();
+    //     SetLocalString( OBJECT_SELF, "TARGET", sTarget );
+    //     oTarget = GetObjectByTag( sTarget );
+    //     if (!GetIsObjectValid( oTarget ))
+    //         return;
+    //     fToTarget = GetDistanceToObject( oTarget );
+    // }
 
     if (fToTarget > 0.5)
         ActionMoveToLocation( GetLocation( oTarget ), TRUE );
-
+        //ActionMoveToLocation(GetLocation(GetObjectByTag(WpClosestAltarRight(OBJECT_SELF))), TRUE);
     return;
 }
 
 // Called when the NPC is spawned.
 void T1_Spawn()
 {
-    string sTarget = GetRandomTarget();
+    string sTarget = WpClosestAltarRight(OBJECT_SELF);
+    if (IsWizard(OBJECT_SELF)) // Send the Wizards elsewhere
+        sTarget = WpClosestAltarLeft(OBJECT_SELF);
+
+    // if (IsFighter(OBJECT_SELF)){
+    //      sTarget =  WpClosestAltarLeft(OBJECT_SELF);
+    // }   
     SetLocalString( OBJECT_SELF, "TARGET", sTarget );
-    ActionMoveToLocation( GetLocation( GetObjectByTag( sTarget ) ), TRUE );
+    ActionMoveToLocation( GetLocation( GetObjectByTag( GetLocalString(OBJECT_SELF, "TARGET") ) ), TRUE );
 }
+
+
+// // Called when the NPC is actively being attacked.
+// void T1_In_Battle()
+// {
+//     if (IsWizard(OBJECT_SELF)){
+//         int nIndex;
+//         for (nIndex = 1; nIndex <= 3; nIndex++)
+//             {
+//                 SpeakString("AAAAAAa! I wanna leave!", TALKVOLUME_SHOUT);
+//                 TalentFlee(GetLastAttacker(OBJECT_SELF));
+//             }
+//     }
+// }
 
 // This function is called when certain events take place, after the standard
 // NWN handling of these events has been performed.
@@ -90,6 +134,7 @@ void T1_UserDefined( int Event )
 
         // At the end of one round of combat.
         case EVENT_END_COMBAT_ROUND:
+            //T1_In_Battle();
             break;
 
         // Every heartbeat (i.e., every six seconds).
