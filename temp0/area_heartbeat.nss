@@ -140,8 +140,6 @@ void main()
         }
     }
 
-    SpeakString( "HEY THERE! I WORK", TALKVOLUME_SHOUT )
-
     UpdateScore( ALTAR_RED_1 );
     UpdateScore( ALTAR_RED_2 );
     UpdateScore( ALTAR_BLUE_1 );

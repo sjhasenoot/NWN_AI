@@ -1,0 +1,22 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            "**/*.ncs": true,
+            "**/*.are": true,
+            "**/*.gic": true,
+            "**/*.git": true,
+            "**/*.uti": true,
+            "**/*.dlg": true,
+            "**/*.itp": true,
+            "**/*.utt": true,
+            "**/*.ifo": true,
+            "**/*.utc": true,
+            "**/*.fac": true,
+        }
+    }
+}

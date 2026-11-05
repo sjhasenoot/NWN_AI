@@ -46,6 +46,7 @@ void T1_HeartBeat()
     if (!GetIsObjectValid( oTarget ))
         return;
 
+
     // If there is a member of my own team close to the target and closer than me,
     // and no enemy is closer and this other member is not in combat and
     // has the same target, then choose a new target.
@@ -84,7 +85,7 @@ void T1_HeartBeat()
     //     fToTarget = GetDistanceToObject( oTarget );
     // }
 
-    if (fToTarget > 0.5)
+    if (fToTarget > 1.5)
         ActionMoveToLocation( GetLocation( oTarget ), TRUE );
         //ActionMoveToLocation(GetLocation(GetObjectByTag(WpClosestAltarRight(OBJECT_SELF))), TRUE);
     return;
@@ -94,12 +95,9 @@ void T1_HeartBeat()
 void T1_Spawn()
 {
     string sTarget = WpClosestAltarRight(OBJECT_SELF);
-    if (IsWizard(OBJECT_SELF)) // Send the Wizards elsewhere
-        sTarget = WpClosestAltarLeft(OBJECT_SELF);
-
-    // if (IsFighter(OBJECT_SELF)){
-    //      sTarget =  WpClosestAltarLeft(OBJECT_SELF);
-    // }   
+    if (IsWizard(OBJECT_SELF)) 
+        sTarget = WpClosestAltarLeft(OBJECT_SELF); // Send the Wizards elsewhere
+        
     SetLocalString( OBJECT_SELF, "TARGET", sTarget );
     ActionMoveToLocation( GetLocation( GetObjectByTag( GetLocalString(OBJECT_SELF, "TARGET") ) ), TRUE );
 }
@@ -156,6 +154,7 @@ void T1_UserDefined( int Event )
 
         // Whenever the NPC dies.
         case EVENT_DEATH:
+            SpeakString("Wilhelm scream");
             break;
 
         // When the NPC has just been spawned.
@@ -178,5 +177,5 @@ void T1_UserDefined( int Event )
 // Called when the fight starts, just before the initial spawning.
 void T1_Initialize( string sColor )
 {
-    SetTeamName( sColor, "Default-" + GetStringLowerCase( sColor ) );
+    SetTeamName( sColor, "Team 1-" + GetStringLowerCase( sColor ) );
 }
