@@ -1,7 +1,6 @@
 #include "NW_I0_GENERIC"
 #include "our_constants"
 
-
 // Called every time that the AI needs to take a combat decision. The default is
 // a call to the NWN DetermineCombatRound.
 void T1_DetermineCombatRound( object oIntruder = OBJECT_INVALID, int nAI_Difficulty = 10 )
@@ -27,7 +26,120 @@ void T1_testing(){
     }
 }
 
+void T1_UpdateHeatmapPoint(string sLocation, string sDataTarget) {
+    object oLocation = GetObjectByTag(sLocation);
 
+    // Get number of players on altar (+2)
+    int iNEnemies_onAltar = CheckEnemyGroupingOnTarget(oLocation,2.0); // What should the distance be?
+    int iNAllies_onAltar = CheckFriendlyFireOnTarget(oLocation,2.0);
+    float fEnemyScore = IntToFloat(iNEnemies_onAltar) * 2.0;
+    float fAllyScore = IntToFloat(iNEnemies_onAltar) * 2.0;
+
+    // // Get number of players near altar (+1)
+    // int iNEnemies_nearAltar = CheckEnemyGroupingOnTarget(oLocation,10.0) - iNEnemies_onAltar; // What should the distance be?
+    // int iNAllies_nearAltar = CheckFriendlyFireOnTarget(oLocation,10.0) - iNAllies_onAltar;
+    // fEnemyScore = fEnemyScore + iNEnemies_nearAltar;
+    // fAllyScore = fAllyScore + iNAllies_nearAltar;
+
+    // // Get number of players in vague vicinity of altar (+.5)
+    // int iNEnemies_vagueVicinity = CheckEnemyGroupingOnTarget(oLocation,20.0) - iNEnemies_onAltar - iNEnemies_nearAltar; // What should the distance be?
+    // int iNAllies_vagueVicinity = CheckFriendlyFireOnTarget(oLocation,20.0) - iNAllies_onAltar - iNAllies_nearAltar;
+    // fEnemyScore = fEnemyScore + iNEnemies_vagueVicinity * 0.5;
+    // fAllyScore = fAllyScore + iNAllies_vagueVicinity * 0.5;
+
+    SetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_ENEMY", fEnemyScore);
+    SetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_ALLY", fAllyScore);
+    // SpeakString(sLocation+" (Heatmap): "+FloatToString(GetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_ENEMY")), TALKVOLUME_SHOUT);
+}
+
+void T1_GetMinHeatmap() {
+
+}
+
+void T1_UpdateHeatmap() {
+    // For each waypoint
+        // Get number of players on altar (+2)
+        // Get number of players near altar (+1)
+        // Get number of players in vague vicinity of altar (+.5)
+
+    string sDataTarget = "WP_" + MyColor() + "_4";
+    string sLocation = "";
+
+    sLocation = "WP_CIRCLE_RED" ;
+    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
+
+    sLocation = "WP_ALTAR_RED_1";
+    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
+
+    sLocation = "WP_ALTAR_RED_2";
+    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
+
+    sLocation = "WP_DOUBLER";
+    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
+
+    sLocation = "WP_ALTAR_BLUE_2";
+    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
+
+    sLocation = "WP_ALTAR_BLUE_1";
+    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
+
+    sLocation = "WP_CIRCLE_BLUE";
+    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
+}
+
+void T1_DisplayHeatmapValue (string sWpName, int iXLocationMod = 0, int iYLocationMod = 0,  int nFadeOut = 0x00000000) {
+    object oDataObject = GetObjectByTag("WP_" + MyColor() + "_4");
+
+    int iScoreColor = GetLocalInt(oDataObject, "COLOR_WHITE");
+    int iLocAddition = 35;
+
+    float iScoreAlly = GetLocalFloat(oDataObject, sWpName+"_ALLY"); // Fetch Ally control score of node
+
+    if (iScoreAlly > 5.0) {
+        iScoreColor = GetLocalInt(oDataObject, "COLOR_"+MyColor());
+    } else if (iScoreAlly > 0.0) {
+        iScoreColor = GetLocalInt(oDataObject, "COLOR_DARK_"+MyColor());
+    }
+
+    PostString(GetFirstPC(), FloatToString(iScoreAlly, 2, 1), 35 + iXLocationMod + (MyColor() == "RED") * iLocAddition , 0 + iYLocationMod, SCREEN_ANCHOR_CENTER , 60.0, iScoreColor, nFadeOut);
+
+}
+
+void T1_DisplayHeatmap() {
+    // With help from: https://nwnlexicon.com/PostString
+    object oDataObject = GetObjectByTag("WP_" + MyColor() + "_4");
+    int nFadeOut = 0x00000000;
+
+    // Custom location for different items in heatmap display
+    int iLocAddition = 35;
+    int iLineWidth = 3;
+
+    PostString(GetFirstPC(), MyColor(), 35 + (MyColor() == "RED") * iLocAddition , 0, SCREEN_ANCHOR_CENTER , 60.0, GetLocalInt(oDataObject, "COLOR_" + MyColor()), nFadeOut);
+    
+    // WP_CIRCLE_RED
+    T1_DisplayHeatmapValue("WP_CIRCLE_RED", 0, iLineWidth * 1);
+
+    // WP_ALTAR_RED_1
+    T1_DisplayHeatmapValue("WP_ALTAR_RED_1", -5, iLineWidth * 2);
+
+    // WP_ALTAR_RED_2
+    T1_DisplayHeatmapValue("WP_ALTAR_RED_2", 5, iLineWidth * 2);
+
+    // WP_DOUBLER
+    T1_DisplayHeatmapValue("WP_DOUBLER", 0, iLineWidth * 3 );
+
+    // WP_ALTAR_BLUE_2
+    T1_DisplayHeatmapValue("WP_ALTAR_BLUE_2", -5, iLineWidth * 4);
+
+    // WP_ALTAR_BLUE_1
+    T1_DisplayHeatmapValue("WP_ALTAR_BLUE_1", 5, iLineWidth * 4 );
+    
+    // WP_CIRCLE_BLUE
+    T1_DisplayHeatmapValue("WP_CIRCLE_BLUE", 0, iLineWidth * 5);
+
+
+
+}
 
 // Called every heartbeat (i.e., every six seconds).
 void T1_HeartBeat()
@@ -47,6 +159,11 @@ void T1_HeartBeat()
         return;
 
 
+
+    if (IsMaster()) {
+        T1_UpdateHeatmap();
+        T1_DisplayHeatmap();
+    }
     // If there is a member of my own team close to the target and closer than me,
     // and no enemy is closer and this other member is not in combat and
     // has the same target, then choose a new target.
@@ -95,11 +212,25 @@ void T1_HeartBeat()
 void T1_Spawn()
 {
     string sTarget = WpClosestAltarRight(OBJECT_SELF);
-    if (IsWizard(OBJECT_SELF)) 
+    if (IsWizard(OBJECT_SELF))
         sTarget = WpClosestAltarLeft(OBJECT_SELF); // Send the Wizards elsewhere
-        
+
     SetLocalString( OBJECT_SELF, "TARGET", sTarget );
     ActionMoveToLocation( GetLocation( GetObjectByTag( GetLocalString(OBJECT_SELF, "TARGET") ) ), TRUE );
+
+    // Set colors (doesn't work in Initialize function for some reason, so it's here.)
+    int nColourRed = 0xFF0000FF;
+    int nColourBlue = 0x0000FFFF;
+    int nColourDarkRed = 0x9B0000FF;
+    int nColourGray = 0xFF808080;
+    int nColourWhite = 0xFFFFFFFF;
+    int nColourDarkBlue = 0x00009BFF;
+
+    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_RED", nColourRed);
+    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_BLUE", nColourBlue);
+    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_DARK_RED", nColourDarkRed);
+    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_DARK_BLUE", nColourDarkBlue);
+    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_WHITE", nColourWhite);
 }
 
 
@@ -178,4 +309,5 @@ void T1_UserDefined( int Event )
 void T1_Initialize( string sColor )
 {
     SetTeamName( sColor, "Team 1-" + GetStringLowerCase( sColor ) );
+
 }
