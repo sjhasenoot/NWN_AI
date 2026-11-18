@@ -53,6 +53,7 @@ void T2_UpdateHeatmapPoint(string sLocation, string sDataTarget) {
     // SpeakString(sLocation+" (Heatmap): "+FloatToString(GetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_ENEMY")), TALKVOLUME_SHOUT);
 }
 
+
 float T2_GetTargetValue(object oData, string sWaypoint,
                         float fBias, float fDistanceRate, float fMaxDistancePenalty)
 {
@@ -60,9 +61,11 @@ float T2_GetTargetValue(object oData, string sWaypoint,
 
     // Bias toward zero; clamp if the bias crosses zero.
     if (fScore > 0.0) {
+        fScore += 5.0; // Adds a base score so that biases can have a bigger effect on decisionmaking (didn't work as a parameter for some reason but can be changed)
         fScore -= fBias;
         if (fScore < 0.0) fScore = 0.0;
     } else if (fScore < 0.0) {
+        fScore -= 5.0; // See comment above
         fScore += fBias;
         if (fScore > 0.0) fScore = 0.0;
     }
@@ -78,6 +81,7 @@ float T2_GetTargetValue(object oData, string sWaypoint,
 
     return fValue + fDistancePenalty;
 }
+
 
 string T2_GetTarget(
     float fWPBias_CircleRed = 0.0,
@@ -266,7 +270,7 @@ void T2_HeartBeat()
     }
 
 
-    if(IsFighterRight(OBJECT_SELF)){
+    if(IsMaster(OBJECT_SELF)){
         T2_testing();
     }
     if (GetIsInCombat())
@@ -311,14 +315,17 @@ void T2_HeartBeat()
 
     if (bNewTarget)
     {
+        float fIsBlue = IntToFloat(MyColor()=="BLUE");
+        float fIsRed = IntToFloat(MyColor()=="RED");
+
         sTarget = T2_GetTarget(
-        IntToFloat(MyColor()=="BLUE") * -10.0,
-        IntToFloat(MyColor()=="RED") * 2.0,
-    IntToFloat(MyColor()=="RED") * 2.0,
-        1.5,
-        IntToFloat(MyColor()=="BLUE") * 2.0,
-        IntToFloat(MyColor()=="BLUE") * 2.0,
-        IntToFloat(MyColor()=="RED") * -10.0
+        fIsBlue * -50.0 - 1.0,
+        fIsRed * 3.0 + 1.5 * IntToFloat(ClaimerOf(ALTAR_RED_1) == "") + 0.5,
+    fIsRed * 3.0 + 1.50 * IntToFloat(ClaimerOf(ALTAR_RED_2) == "") + 0.5,
+        3.0 + 2.0 * IntToFloat(ClaimerOf(DOUBLER) == ""),
+        fIsBlue * 3.0 + 1.50 * IntToFloat(ClaimerOf(ALTAR_BLUE_1) == "") + 0.5,
+        fIsBlue * 3.0 + 1.50 * IntToFloat(ClaimerOf(ALTAR_BLUE_2) == "") + 0.5,
+        fIsRed * -50.0 - 1.0
     );
         SetLocalString( OBJECT_SELF, "TARGET", sTarget );
         oTarget = GetObjectByTag( sTarget );
@@ -327,7 +334,7 @@ void T2_HeartBeat()
         fToTarget = GetDistanceToObject( oTarget );
     }
 
-    if (fToTarget > 1.5)
+    if (fToTarget > 1.0)
         ActionMoveToLocation( GetLocation( oTarget ), TRUE );
         //ActionMoveToLocation(GetLocation(GetObjectByTag(WpClosestAltarRight(OBJECT_SELF))), TRUE);
     return;
@@ -336,10 +343,22 @@ void T2_HeartBeat()
 // Called when the NPC is spawned.
 void T2_Spawn()
 {
-    // NOTE: THIS IS CURRENTLY BEING FULLY OVERWRITTEN BY T2_GetTarget() AROUND LINE 276
+    // Default target for first heartbeat
     string sTarget = WpClosestAltarRight(OBJECT_SELF);
-    if (IsWizard(OBJECT_SELF))
-        sTarget = WpClosestAltarLeft(OBJECT_SELF); // Send the Wizards elsewhere
+    if (IsWizardLeft(OBJECT_SELF))
+        sTarget = WpDoubler();
+    if (IsWizardRight(OBJECT_SELF))
+        sTarget = WpClosestAltarRight(OBJECT_SELF);
+    if (IsClericLeft(OBJECT_SELF))
+        sTarget = WpClosestAltarLeft(OBJECT_SELF);
+    if (IsClericRight(OBJECT_SELF))
+        sTarget = WpDoubler();
+    if (IsFighterLeft(OBJECT_SELF))
+        sTarget = WpClosestAltarLeft(OBJECT_SELF);
+    if (IsFighterRight(OBJECT_SELF))
+        sTarget = WpDoubler();
+    if (IsMaster(OBJECT_SELF))
+        sTarget = WpClosestAltarRight(OBJECT_SELF);
 
     SetLocalString( OBJECT_SELF, "TARGET", sTarget );
     ActionMoveToLocation( GetLocation( GetObjectByTag( GetLocalString(OBJECT_SELF, "TARGET") ) ), TRUE );
