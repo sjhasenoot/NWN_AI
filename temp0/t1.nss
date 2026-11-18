@@ -8,272 +8,13 @@ void T1_DetermineCombatRound( object oIntruder = OBJECT_INVALID, int nAI_Difficu
     DetermineCombatRound( oIntruder, nAI_Difficulty );
 }
 
-
-
-
-void T1_testing(){
-    string sColor = MyColor( OBJECT_SELF );
-    string sMyCirlce = "WP_CIRCLE_" + sColor;
-    SpeakString(IntToString(GetTimer(sMyCirlce)), TALKVOLUME_SHOUT);
-
-    if (GetTimer(sMyCirlce) > 2){
-        //ClearAllActions(OBJECT_SELF);
-        SetLocalString(OBJECT_SELF, "TARGET", sMyCirlce);
-    }
-    else{
-        string sTarget = WpClosestAltarRight(OBJECT_SELF);
-        SetLocalString( OBJECT_SELF, "TARGET", sTarget );
-    }
-}
-
-void T1_UpdateHeatmapPoint(string sLocation, string sDataTarget) {
-    object oLocation = GetObjectByTag(sLocation);
-
-    // Get number of players on altar (+2)
-    int iNEnemies_onAltar = CheckEnemyGroupingOnTarget(oLocation,2.0); // What should the distance be?
-    int iNAllies_onAltar = CheckFriendlyFireOnTarget(oLocation,2.0);
-    float fEnemyScore = IntToFloat(iNEnemies_onAltar) * 2.0;
-    float fAllyScore = IntToFloat(iNAllies_onAltar) * 2.0;
-
-    // // Get number of players near altar (+1)
-    int iNEnemies_nearAltar = CheckEnemyGroupingOnTarget(oLocation,10.0) - iNEnemies_onAltar; // What should the distance be?
-    int iNAllies_nearAltar = CheckFriendlyFireOnTarget(oLocation,10.0) - iNAllies_onAltar;
-    fEnemyScore = fEnemyScore + IntToFloat(iNEnemies_nearAltar);
-    fAllyScore = fAllyScore + IntToFloat(iNAllies_nearAltar);
-
-    // Get number of players in vague vicinity of altar (+.5)
-    int iNEnemies_vagueVicinity = CheckEnemyGroupingOnTarget(oLocation,20.0) - iNEnemies_onAltar - iNEnemies_nearAltar; // What should the distance be?
-    int iNAllies_vagueVicinity = CheckFriendlyFireOnTarget(oLocation,20.0) - iNAllies_onAltar - iNAllies_nearAltar;
-    fEnemyScore = fEnemyScore + IntToFloat(iNEnemies_vagueVicinity) * 0.5;
-    fAllyScore = fAllyScore + iNAllies_vagueVicinity * 0.5;
-
-    SetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_ENEMY", fEnemyScore);
-    SetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_ALLY", fAllyScore);
-    SetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_COMBINED", fAllyScore - fEnemyScore);
-    // SpeakString(sLocation+" (Heatmap): "+FloatToString(GetLocalFloat(GetObjectByTag(sDataTarget), sLocation + "_ENEMY")), TALKVOLUME_SHOUT);
-}
-
-float T1_GetTargetValue(object oData, string sWaypoint,
-                        float fBias, float fDistanceRate, float fMaxDistancePenalty)
-{
-    float fScore = GetLocalFloat(oData, sWaypoint + "_COMBINED");
-
-    // Bias toward zero; clamp if the bias crosses zero.
-    if (fScore > 0.0) {
-        fScore -= fBias;
-        if (fScore < 0.0) fScore = 0.0;
-    } else if (fScore < 0.0) {
-        fScore += fBias;
-        if (fScore > 0.0) fScore = 0.0;
-    }
-
-    // Square the transformed score; cap the distance penalty.
-    float fValue = fScore * fScore;
-    float fDistancePenalty = GetDistanceBetween(
-        OBJECT_SELF, GetObjectByTag(sWaypoint)
-    ) * fDistanceRate;
-
-    if (fDistancePenalty > fMaxDistancePenalty)
-        fDistancePenalty = fMaxDistancePenalty;
-
-    return fValue + fDistancePenalty;
-}
-
-string T1_GetTarget(
-    float fWPBias_CircleRed = 0.0,
-    float fWPBias_Altar_Red_1 = 0.0,
-    float fWPBias_Altar_Red_2 = 0.0,
-    float fWPBias_Doubler = 0.0,
-    float fWPBias_Altar_Blue_1 = 0.0,
-    float fWPBias_Altar_Blue_2 = 0.0,
-    float fWPBias_CircleBlue = 0.0,
-    float fDistanceRate = 0.1,
-    float fMaxDistancePenalty = 5.0
-)
-{
-    object oData = GetObjectByTag("WP_" + MyColor() + "_4");
-
-    string sBestTarget = "";
-    float fBestValue = 1000000.0; // This is a cost value, we want this to be as low as possible
-    float fValue;
-
-    fValue = T1_GetTargetValue(
-        oData, "WP_CIRCLE_RED",
-        fWPBias_CircleRed, fDistanceRate, fMaxDistancePenalty
-    );
-    if (fValue < fBestValue) {
-        fBestValue = fValue;
-        sBestTarget = "WP_CIRCLE_RED";
-    }
-
-    fValue = T1_GetTargetValue(
-        oData, "WP_ALTAR_RED_1",
-        fWPBias_Altar_Red_1, fDistanceRate, fMaxDistancePenalty
-    );
-    if (fValue < fBestValue) {
-        fBestValue = fValue;
-        sBestTarget = "WP_ALTAR_RED_1";
-    }
-
-    fValue = T1_GetTargetValue(
-        oData, "WP_ALTAR_RED_2",
-        fWPBias_Altar_Red_2, fDistanceRate, fMaxDistancePenalty
-    );
-    if (fValue < fBestValue) {
-        fBestValue = fValue;
-        sBestTarget = "WP_ALTAR_RED_2";
-    }
-
-    fValue = T1_GetTargetValue(
-        oData, "WP_DOUBLER",
-        fWPBias_Doubler, fDistanceRate, fMaxDistancePenalty
-    );
-    if (fValue < fBestValue) {
-        fBestValue = fValue;
-        sBestTarget = "WP_DOUBLER";
-    }
-
-    fValue = T1_GetTargetValue(
-        oData, "WP_ALTAR_BLUE_1",
-        fWPBias_Altar_Blue_1, fDistanceRate, fMaxDistancePenalty
-    );
-    if (fValue < fBestValue) {
-        fBestValue = fValue;
-        sBestTarget = "WP_ALTAR_BLUE_1";
-    }
-
-    fValue = T1_GetTargetValue(
-        oData, "WP_ALTAR_BLUE_2",
-        fWPBias_Altar_Blue_2, fDistanceRate, fMaxDistancePenalty
-    );
-    if (fValue < fBestValue) {
-        fBestValue = fValue;
-        sBestTarget = "WP_ALTAR_BLUE_2";
-    }
-
-    fValue = T1_GetTargetValue(
-        oData, "WP_CIRCLE_BLUE",
-        fWPBias_CircleBlue, fDistanceRate, fMaxDistancePenalty
-    );
-    if (fValue < fBestValue) {
-        fBestValue = fValue;
-        sBestTarget = "WP_CIRCLE_BLUE";
-    }
-
-    return sBestTarget;
-}
-
-void T1_UpdateHeatmap() {
-    // For each waypoint
-        // Get number of players on altar (+2)
-        // Get number of players near altar (+1)
-        // Get number of players in vague vicinity of altar (+.5)
-
-    string sDataTarget = "WP_" + MyColor() + "_4";
-    string sLocation = "";
-
-    sLocation = "WP_CIRCLE_RED" ;
-    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
-
-    sLocation = "WP_ALTAR_RED_1";
-    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
-
-    sLocation = "WP_ALTAR_RED_2";
-    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
-
-    sLocation = "WP_DOUBLER";
-    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
-
-    sLocation = "WP_ALTAR_BLUE_2";
-    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
-
-    sLocation = "WP_ALTAR_BLUE_1";
-    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
-
-    sLocation = "WP_CIRCLE_BLUE";
-    T1_UpdateHeatmapPoint(sLocation, sDataTarget);
-}
-
-void T1_DisplayHeatmapValue (string sWpName, int iXLocationMod = 0, int iYLocationMod = 0,  int nFadeOut = 0x00000000) {
-    object oData = GetObjectByTag("WP_" + MyColor() + "_4");
-
-    int iScoreColor;
-    int iLocAddition = 20;
-
-    float iScoreAlly = GetLocalFloat(oData, sWpName+"_ALLY"); // Fetch Ally control score of node
-    float iScoreEnemy = GetLocalFloat(oData, sWpName+"_ENEMY"); // Fetch Ally control score of node
-    float iScoreCombined = GetLocalFloat(oData, sWpName+"_COMBINED");
-
-    if (iScoreCombined > 5.0) {
-        iScoreColor = GetLocalInt(oData, "COLOR_"+MyColor());
-    } else if (iScoreCombined > 0.0) {
-        iScoreColor = GetLocalInt(oData, "COLOR_DARK_"+MyColor());
-    } else if (iScoreCombined == 0.0 & iScoreAlly != 0.0) {
-        iScoreColor = GetLocalInt(oData, "COLOR_PURPLE");
-    }  else if (iScoreCombined == 0.0) {
-        iScoreColor = GetLocalInt(oData, "COLOR_WHITE");
-    } else if (iScoreCombined < -5.0) {
-        iScoreColor = GetLocalInt(oData, "COLOR_"+OpponentColor());
-    } else if (iScoreCombined < 0.0) {
-        iScoreColor = GetLocalInt(oData, "COLOR_DARK_"+OpponentColor());
-    } else {
-        iScoreColor = GetLocalInt(oData, "COLOR_WHITE");
-    }
-
-    PostString(GetFirstPC(), FloatToString(iScoreCombined, 2, 1), 65 + iXLocationMod + (MyColor() == "RED") * iLocAddition , 0 + iYLocationMod, SCREEN_ANCHOR_CENTER , 60.0, iScoreColor, nFadeOut);
-
-}
-
-void T1_DisplayHeatmap() {
-    // With help from: https://nwnlexicon.com/PostString
-    object oData = GetObjectByTag("WP_" + MyColor() + "_4");
-    int nFadeOut = 0x00000000;
-
-    // Custom location for different items in heatmap display
-    int iLocAddition = 20;
-    int iLineWidth = 3;
-
-    PostString(GetFirstPC(), MyColor(), 65 + (MyColor() == "RED") * iLocAddition , 0, SCREEN_ANCHOR_CENTER , 60.0, GetLocalInt(oData, "COLOR_" + MyColor()), nFadeOut);
-
-    // WP_CIRCLE_RED
-    T1_DisplayHeatmapValue("WP_CIRCLE_RED", 0, iLineWidth * 1);
-
-    // WP_ALTAR_RED_1
-    T1_DisplayHeatmapValue("WP_ALTAR_RED_1", -5, iLineWidth * 2);
-
-    // WP_ALTAR_RED_2
-    T1_DisplayHeatmapValue("WP_ALTAR_RED_2", 5, iLineWidth * 2);
-
-    // WP_DOUBLER
-    T1_DisplayHeatmapValue("WP_DOUBLER", 0, iLineWidth * 3 );
-
-    // WP_ALTAR_BLUE_2
-    T1_DisplayHeatmapValue("WP_ALTAR_BLUE_2", -5, iLineWidth * 4);
-
-    // WP_ALTAR_BLUE_1
-    T1_DisplayHeatmapValue("WP_ALTAR_BLUE_1", 5, iLineWidth * 4 );
-
-    // WP_CIRCLE_BLUE
-    T1_DisplayHeatmapValue("WP_CIRCLE_BLUE", 0, iLineWidth * 5);
-}
-
 // Called every heartbeat (i.e., every six seconds).
 void T1_HeartBeat()
 {
-    if (IsMaster()) {
-        T1_UpdateHeatmap();
-        T1_DisplayHeatmap();
-    }
-
-
-    if(IsFighterRight(OBJECT_SELF)){
-        T1_testing();
-    }
     if (GetIsInCombat())
         return;
 
     string sTarget = GetLocalString( OBJECT_SELF, "TARGET" );
-
     if (sTarget == "")
         return;
 
@@ -311,15 +52,7 @@ void T1_HeartBeat()
 
     if (bNewTarget)
     {
-        sTarget = T1_GetTarget(
-        IntToFloat(MyColor()=="BLUE") * -10.0,
-        IntToFloat(MyColor()=="RED") * 2.0,
-    IntToFloat(MyColor()=="RED") * 2.0,
-        1.5,
-        IntToFloat(MyColor()=="BLUE") * 2.0,
-        IntToFloat(MyColor()=="BLUE") * 2.0,
-        IntToFloat(MyColor()=="RED") * -10.0
-    );
+        sTarget = GetRandomTarget();
         SetLocalString( OBJECT_SELF, "TARGET", sTarget );
         oTarget = GetObjectByTag( sTarget );
         if (!GetIsObjectValid( oTarget ))
@@ -327,53 +60,19 @@ void T1_HeartBeat()
         fToTarget = GetDistanceToObject( oTarget );
     }
 
-    if (fToTarget > 1.5)
+    if (fToTarget > 0.5)
         ActionMoveToLocation( GetLocation( oTarget ), TRUE );
-        //ActionMoveToLocation(GetLocation(GetObjectByTag(WpClosestAltarRight(OBJECT_SELF))), TRUE);
+
     return;
 }
 
 // Called when the NPC is spawned.
 void T1_Spawn()
 {
-    // NOTE: THIS IS CURRENTLY BEING FULLY OVERWRITTEN BY T1_GetTarget() AROUND LINE 276
-    string sTarget = WpClosestAltarRight(OBJECT_SELF);
-    if (IsWizard(OBJECT_SELF))
-        sTarget = WpClosestAltarLeft(OBJECT_SELF); // Send the Wizards elsewhere
-
+    string sTarget = GetRandomTarget();
     SetLocalString( OBJECT_SELF, "TARGET", sTarget );
-    ActionMoveToLocation( GetLocation( GetObjectByTag( GetLocalString(OBJECT_SELF, "TARGET") ) ), TRUE );
-
-    // Set colors (doesn't work in Initialize function for some reason, so it's here.)
-    int nColourRed = 0xFF0000FF;
-    int nColourBlue = 0x0000FFFF;
-    int nColourDarkRed = 0x9B0000FF;
-    int nColourGray = 0xFF808080;
-    int nColourWhite = 0xFFFFFFFF;
-    int nColourDarkBlue = 0x00009BFF;
-    int nColourPurple = 0x800080FF;
-
-    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_RED", nColourRed);
-    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_BLUE", nColourBlue);
-    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_DARK_RED", nColourDarkRed);
-    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_DARK_BLUE", nColourDarkBlue);
-    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_WHITE", nColourWhite);
-    SetLocalInt(GetObjectByTag("WP_" + MyColor() + "_4"), "COLOR_PURPLE", nColourPurple);
+    ActionMoveToLocation( GetLocation( GetObjectByTag( sTarget ) ), TRUE );
 }
-
-
-// // Called when the NPC is actively being attacked.
-// void T1_In_Battle()
-// {
-//     if (IsWizard(OBJECT_SELF)){
-//         int nIndex;
-//         for (nIndex = 1; nIndex <= 3; nIndex++)
-//             {
-//                 SpeakString("AAAAAAa! I wanna leave!", TALKVOLUME_SHOUT);
-//                 TalentFlee(GetLastAttacker(OBJECT_SELF));
-//             }
-//     }
-// }
 
 // This function is called when certain events take place, after the standard
 // NWN handling of these events has been performed.
@@ -391,7 +90,6 @@ void T1_UserDefined( int Event )
 
         // At the end of one round of combat.
         case EVENT_END_COMBAT_ROUND:
-            //T1_In_Battle();
             break;
 
         // Every heartbeat (i.e., every six seconds).
@@ -413,7 +111,6 @@ void T1_UserDefined( int Event )
 
         // Whenever the NPC dies.
         case EVENT_DEATH:
-            SpeakString("Wilhelm scream");
             break;
 
         // When the NPC has just been spawned.
@@ -436,6 +133,5 @@ void T1_UserDefined( int Event )
 // Called when the fight starts, just before the initial spawning.
 void T1_Initialize( string sColor )
 {
-    SetTeamName( sColor, "Team 1-" + GetStringLowerCase( sColor ) );
-
+    SetTeamName( sColor, "Default-" + GetStringLowerCase( sColor ) );
 }
