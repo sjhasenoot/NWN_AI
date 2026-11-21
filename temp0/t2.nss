@@ -10,8 +10,9 @@ void T2_DetermineCombatRound( object oIntruder = OBJECT_INVALID, int nAI_Difficu
 
 
 
-
-void T2_testing(){
+//current ogre preventing strategy (assigned inside of heartbeat to commander)
+//a guy runs to the spawner if the times > 2, else, picks nearest altar and goes to it
+void T2_OgrePrevention(){
     string sColor = MyColor( OBJECT_SELF );
     string sMyCirlce = "WP_CIRCLE_" + sColor;
     SpeakString(IntToString(GetTimer(sMyCirlce)), TALKVOLUME_SHOUT);
@@ -270,8 +271,8 @@ void T2_HeartBeat()
     }
 
 
-    if(IsMaster(OBJECT_SELF)){
-        T2_testing();
+    if(IsFighterRight(OBJECT_SELF)){
+        T2_OgrePrevention();
     }
     if (GetIsInCombat())
         return;
